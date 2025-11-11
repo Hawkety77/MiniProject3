@@ -17,5 +17,5 @@ header-includes:
 
 
 ```{r}
-print("code")
+df <- read.table('https://tofu.byu.edu/docs/files/stat666/datasets/collins.txt',skip=10,header=TRUE)
 ```
