@@ -1,6 +1,6 @@
 ---
 title: "Mini Project 3"
-author: "Evan Hatch, Connor Thompson, Ty Hawkes"
+author: "Evan Miller, Connor Thompson, Ty Hawkes"
 date: "`r Sys.Date()`"
 output:
   pdf_document: default
