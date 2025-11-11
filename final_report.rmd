@@ -1,0 +1,21 @@
+---
+title: "Mini Project 3"
+author: "Evan Hatch, Connor Thompson, Ty Hawkes"
+date: "`r Sys.Date()`"
+output:
+  pdf_document: default
+  html_document:
+    df_print: paged
+fontsize: 11pt
+geometry: margin=1in
+header-includes:
+- \usepackage{setspace}
+- \singlespacing
+---
+
+# Heading
+
+
+```{r}
+print("code")
+```
