@@ -2,6 +2,8 @@ library(tidyverse)
 library(reshape2)
 library(cluster)
 
+set.seed(42)
+
 # Read in the data --------------------------------------------------------
 df <- read.table('https://tofu.byu.edu/docs/files/stat666/datasets/collins.txt',skip=10,header=TRUE)
 head(df)
@@ -17,12 +19,20 @@ summary(df)
 
 cluster_df <- df %>% select(-c(Genre,Counter,Corpus,Corp.Genre,Text,Text_Coverage))
 cluster_mat <- data.matrix(cluster_df)
+
+vars <- apply(cluster_mat, 2, var)
+means <- apply(cluster_mat, 2, mean)
+cluster_mat_std <- cluster_mat[]
+for (i in 1:nrow(cluster_mat)) {
+  cluster_mat_std[i, ] <- (cluster_mat[i, ] - means) / sqrt(vars)
+}
+
 ## agglomerative clustering
-dc <- dist(cluster_mat)
+dc <- dist(cluster_mat_std)
 wardlink <- hclust(dc,method='ward.D2')
 plot(wardlink,labels=FALSE)
 
-cluster_assigns <- matrix(nrow=nrow(cluster_mat),ncol=10)
+cluster_assigns <- matrix(nrow=nrow(cluster_mat_std),ncol=10)
 colnames(cluster_assigns) <- c('agglo_3','agglo_4','agglo_5','agglo_6','agglo_7',
                                'means_3','means_4','means_5','means_6','means_7')
 for(k in 3:7){
@@ -31,7 +41,7 @@ for(k in 3:7){
 
 ## K-means
 for(k in 3:7){
-  cluster_assigns[,k+3] <- kmeans(cluster_mat,k)$cluster
+  cluster_assigns[,k+3] <- kmeans(cluster_mat_std,k)$cluster
 }
 
 cluster_df_with_clusters <- as.data.frame(cbind(cluster_df,cluster_assigns))
