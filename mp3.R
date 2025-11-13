@@ -88,38 +88,104 @@ for(col in colnames(cluster_assigns)) {
 
 ## misclassification rates
 # lda
-for(col in colnames(cluster_assigns)){
-  # Build formula dynamically
-  fmla <- reformulate(
-    response = paste0("as.factor(", col, ")"),
-    termlabels = c("FirstPerson", "InnerThinking", "ThinkPositive", "ThinkNegative",
-                         "ThinkAhead", "ThinkBack", "Reasoning", "Share_SocTies", 
-                         "Direct_Activity", "Interacting", "Notifying", "LinearGuidance", 
-                         "WordPicture", "SpaceInterval", "Motion", "PastEvents", 
-                         "TimeInterval", "ShiftingEvents"))
-  model <- MASS::lda(fmla,data=cluster_df_with_clusters)
-  response <- as.factor(cluster_df_with_clusters[[col]])
-  preds <- predict(model,cluster_df)$class
-  misclass_rate <- 1 - mean(preds == response)
+for(col in colnames(cluster_assigns)) {
+  predictors <- c("FirstPerson", "InnerThinking", "ThinkPositive", "ThinkNegative",
+                  "ThinkAhead", "ThinkBack", "Reasoning", "Share_SocTies", 
+                  "Direct_Activity", "Interacting", "Notifying", "LinearGuidance", 
+                  "WordPicture", "SpaceInterval", "Motion", "PastEvents", 
+                  "TimeInterval", "ShiftingEvents")
+  y <- as.factor(cluster_df_with_clusters[[col]])
+  n <- length(y)
+  k <- 5
+  # stratified fold assignment
+  set.seed(42)
+  folds <- integer(n)
+  for(level in levels(y)) {
+    idx <- which(y == level)
+    idx <- sample(idx)
+    folds[idx] <- rep(1:k, length.out = length(idx))
+  }
   
-  cat("Factor:", col,' ', "\tMisclassification rate:", round(misclass_rate, 4), "\n")
+  fold_mis <- numeric(k)
+  for(f in 1:k) {
+    train_idx <- which(folds != f)
+    test_idx  <- which(folds == f)
+    train_df <- cluster_df_with_clusters[train_idx, , drop = FALSE]
+    test_df  <- cluster_df_with_clusters[test_idx, , drop = FALSE]
+    
+    # if some classes are missing in training, skip this fold
+    if(length(unique(train_df[[col]])) < length(levels(y))) {
+      fold_mis[f] <- NA
+      next
+    }
+    
+    fmla <- reformulate(
+      response = paste0("as.factor(", col, ")"),
+      termlabels = predictors
+    )
+    
+    model <- tryCatch(MASS::lda(fmla, data = train_df), error = function(e) NULL)
+    if(is.null(model)) {
+      fold_mis[f] <- NA
+      next
+    }
+    
+    preds <- predict(model, newdata = test_df)$class
+    fold_mis[f] <- 1 - mean(preds == as.factor(test_df[[col]]))
+  }
+  
+  mean_mis <- mean(fold_mis, na.rm = TRUE)
+  cat("Factor:", col, "\t5-fold CV Misclassification rate:", round(mean_mis, 4), "\n")
 }
 # qda
-for(col in colnames(cluster_assigns)){
-  # Build formula dynamically
-  fmla <- reformulate(
-    response = paste0("as.factor(", col, ")"),
-    termlabels = c("FirstPerson", "InnerThinking", "ThinkPositive", "ThinkNegative",
-                   "ThinkAhead", "ThinkBack", "Reasoning", "Share_SocTies", 
-                   "Direct_Activity", "Interacting", "Notifying", "LinearGuidance", 
-                   "WordPicture", "SpaceInterval", "Motion", "PastEvents", 
-                   "TimeInterval", "ShiftingEvents"))
-  model <- MASS::qda(fmla,data=cluster_df_with_clusters)
-  response <- as.factor(cluster_df_with_clusters[[col]])
-  preds <- predict(model,cluster_df)$class
-  misclass_rate <- 1 - mean(preds == response)
+for(col in colnames(cluster_assigns)) {
+  predictors <- c("FirstPerson", "InnerThinking", "ThinkPositive", "ThinkNegative",
+                  "ThinkAhead", "ThinkBack", "Reasoning", "Share_SocTies", 
+                  "Direct_Activity", "Interacting", "Notifying", "LinearGuidance", 
+                  "WordPicture", "SpaceInterval", "Motion", "PastEvents", 
+                  "TimeInterval", "ShiftingEvents")
+  y <- as.factor(cluster_df_with_clusters[[col]])
+  n <- length(y)
+  k <- 5
+  # stratified fold assignment
+  set.seed(42)
+  folds <- integer(n)
+  for(level in levels(y)) {
+    idx <- which(y == level)
+    idx <- sample(idx)
+    folds[idx] <- rep(1:k, length.out = length(idx))
+  }
   
-  cat("Factor:", col,' ', "\tMisclassification rate:", round(misclass_rate, 4), "\n")
+  fold_mis <- numeric(k)
+  for(f in 1:k) {
+    train_idx <- which(folds != f)
+    test_idx  <- which(folds == f)
+    train_df <- cluster_df_with_clusters[train_idx, , drop = FALSE]
+    test_df  <- cluster_df_with_clusters[test_idx, , drop = FALSE]
+    
+    # if some classes are missing in training, skip this fold
+    if(length(unique(train_df[[col]])) < length(levels(y))) {
+      fold_mis[f] <- NA
+      next
+    }
+    
+    fmla <- reformulate(
+      response = paste0("as.factor(", col, ")"),
+      termlabels = predictors
+    )
+    
+    model <- tryCatch(MASS::qda(fmla, data = train_df), error = function(e) NULL)
+    if(is.null(model)) {
+      fold_mis[f] <- NA
+      next
+    }
+    
+    preds <- predict(model, newdata = test_df)$class
+    fold_mis[f] <- 1 - mean(preds == as.factor(test_df[[col]]))
+  }
+  
+  mean_mis <- mean(fold_mis, na.rm = TRUE)
+  cat("Factor:", col, "\t5-fold CV Misclassification rate:", round(mean_mis, 4), "\n")
 }
 
 ## Silhouette scores
@@ -197,3 +263,5 @@ ggplot(super_genre_cluster_long, aes(x = Genre, y = factor(Cluster), fill = Coun
   theme_minimal() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
+
+write.csv(final_df,'./final_df.csv',row.names=FALSE)
