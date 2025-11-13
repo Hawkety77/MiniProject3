@@ -1,20 +1,20 @@
 library(dplyr)
 library(ggplot2)
 library(GGally)
-library(dbscan)
 library(Rtsne)
+library(cluster)
 
 df_full <- read.table('https://tofu.byu.edu/docs/files/stat666/datasets/collins.txt',
                       skip=10, header=TRUE)
 
 df <- df_full %>% 
-  select(-Genre, -Text) %>%
+  select(-Text, -Text_Coverage, -Genre, -Counter, -Corpus, -Corp.Genre) %>%
   scale()
 
-# dbscan clustering
-kNNdistplot(df, k = 5)
-dbscan_result <- dbscan(df, eps=3, minPts=5)
-dbscan_cluster <- as.factor(dbscan_result$cluster)
+# T-SNE
+set.seed(77)
+tsne_result <- Rtsne(df, perplexity=30)
+tsne_df_base <- data.frame(X = tsne_result$Y[,1], Y = tsne_result$Y[,2])
 
 # t-SNE on scaled data with DBSCAN clusters
 tsne_df_dbscan <- data.frame(X=tsne_result$Y[,1], Y=tsne_result$Y[,2], Cluster=dbscan_cluster)
@@ -25,10 +25,6 @@ ggplot(tsne_df_dbscan, aes(x=X, y=Y, color=Cluster)) +
        x="t-SNE Dimension 1", y="t-SNE Dimension 2")
 
 # k-means clustering with varying k
-set.seed(77)
-tsne_result <- Rtsne(df, perplexity=30)
-tsne_df_base <- data.frame(X = tsne_result$Y[,1], Y = tsne_result$Y[,2])
-
 par(mfrow=c(2,3))
 
 for (k in 3:7) {
@@ -48,6 +44,28 @@ for (k in 3:7) {
   
   print(p)
 }
+
+# get elbow scores and sillouette scores for k-means
+elbow_scores <- numeric(10)
+silhouette_scores <- numeric(10)
+for (k in 1:10) {
+  set.seed(77)
+  kmeans_result <- kmeans(df, centers=k, nstart=20)
+  elbow_scores[k] <- kmeans_result$tot.withinss
+  
+  if (k > 1) {
+    ss <- silhouette(kmeans_result$cluster, dist(df))
+    silhouette_scores[k] <- mean(ss[, 3])
+  } else {
+    silhouette_scores[k] <- NA
+  }
+}
+par(mfrow=c(1,2))
+plot(1:10, elbow_scores, type='b', xlab='Number of Clusters (k)', ylab='Total Within-Cluster SS',
+     main='Elbow Method for k-means')
+plot(1:10, silhouette_scores, type='b', xlab='Number of Clusters (k)', ylab='Average Silhouette Width',
+     main='Silhouette Scores for k-means')
+
 
 
 

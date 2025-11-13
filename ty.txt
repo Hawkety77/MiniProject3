@@ -1,0 +1,22 @@
+Outline for success?
+
+Intro
+Step 1: Clustering text
+- K-means
+- Hierarchical clustering
+Step 2: Follow-up analysis (significant manova, low misclassification, good elbows)
+- Elbow and/or sillhouette
+- PCA to visualize
+- Manova to test significance
+- Misclassification test
+    - lda
+    - qda
+    - knn
+Step 3: Interpretation and describe clusters
+- Interpret discriminant functions (talk about variance explained too)
+- Genre/Supergenre contingency tables
+- Label clusters based on discriminant functions and genre distribution
+Conclusion
+
+
+
