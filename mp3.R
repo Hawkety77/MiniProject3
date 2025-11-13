@@ -27,6 +27,8 @@ for (i in 1:nrow(cluster_mat)) {
   cluster_mat_std[i, ] <- (cluster_mat[i, ] - means) / sqrt(vars)
 }
 
+
+
 ## agglomerative clustering
 dc <- dist(cluster_mat_std)
 wardlink <- hclust(dc,method='ward.D2')
@@ -237,7 +239,7 @@ ggplot(genre_cluster_long, aes(x = Genre, y = factor(Cluster), fill = Count)) +
   labs(x = "Genre", y = "Cluster", fill = "Count",
        title = "Genre Distribution Across Clusters") +
   theme_minimal() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  theme(axis.text.x = element_text(angle = -45, hjust = 0))
 
 ## Compare to super genres
 super_genre_labels <- c(
@@ -261,7 +263,12 @@ ggplot(super_genre_cluster_long, aes(x = Genre, y = factor(Cluster), fill = Coun
   labs(x = "Genre", y = "Cluster", fill = "Count",
        title = "Genre Distribution Across Clusters") +
   theme_minimal() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  theme(axis.text.x = element_text(angle = -45, hjust = 0))
 
 
-write.csv(final_df,'./final_df.csv',row.names=FALSE)
+
+output_df  <- df[]
+colnames(cluster_mat_std) <- paste0(colnames(cluster_mat_std), '_std')
+output_df <- cbind(output_df, cluster_mat_std, cluster_assigns)
+
+write.csv(output_df,'./final_df.csv',row.names=FALSE)
